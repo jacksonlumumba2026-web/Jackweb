@@ -1,0 +1,37 @@
+body {
+  font-family: 'Poppins';
+  margin: 0;
+  text-align: center;
+}
+
+.hero {
+  background: linear-gradient(black, #333);
+  color: white;
+  padding: 100px;
+}
+
+.btn {
+  background: orange;
+  padding: 10px 20px;
+  border-radius: 20px;
+  color: white;
+  text-decoration: none;
+}
+
+.image img {
+  width: 80%;
+  margin: 40px auto;
+  border-radius: 10px;
+}
+
+.features {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.box {
+  background: #eee;
+  padding: 30px;
+  border-radius: 10px;
+    }
