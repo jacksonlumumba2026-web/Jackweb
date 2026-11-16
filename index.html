@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inkwell – Write on any document</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Homemade+Apple&family=Reenie+Beanie&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1efe9;--bar:#fffffff2;--ink:#17171a;--mut:#6a6a72;--acc:#1d3a8a;--accfg:#fff;--line:#0000001f;--card:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141417;--bar:#232328f2;--ink:#f3f3f5;--mut:#a2a2ab;--acc:#8fb0ff;--accfg:#10142a;--line:#ffffff24;--card:#1e1e23}}
+:root[data-theme="dark"]{--bg:#141417;--bar:#232328f2;--ink:#f3f3f5;--mut:#a2a2ab;--acc:#8fb0ff;--accfg:#10142a;--line:#ffffff24;--card:#1e1e23}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:200px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bar);z-index:10}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--bar);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.brand{font-weight:700;font-size:18px;letter-spacing:-.02em;margin-right:auto}
+button,.btn{font:inherit;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:12px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.sm{padding:7px 10px;min-width:0;font-size:14px}.pri{background:var(--acc);color:var(--accfg);border-color:transparent;font-weight:600}.on{background:var(--acc);color:var(--accfg);border-color:transparent}
+.lbl{color:var(--mut);font-size:13px}
+#pages{overflow-x:auto;padding:12px}
+.page{position:relative;margin:0 auto 16px;background:#fff;box-shadow:0 10px 30px -12px #0000004d,0 1px 3px #0000001f;border-radius:4px}
+.page canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.page canvas.ink{touch-action:auto}
+body.draw .page canvas.ink{touch-action:none;cursor:crosshair}
+.page input{position:absolute;transform:translateY(-50%);background:#fff8;border:1px dashed #1d3a8a;outline:none;padding:0 4px;min-width:140px;z-index:2}
+.empty{max-width:420px;margin:10vh auto 0;text-align:center;padding:28px 22px;background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 20px 50px -24px #0000004d}
+.empty h1{font-size:26px;line-height:1.15;letter-spacing:-.03em;margin:0 0 10px}.empty p{color:var(--mut);margin:0 0 20px}
+.row,.r{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
+.tb{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--bar);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.op{display:none;align-items:center;justify-content:center;gap:8px 10px;padding:8px 10px;flex-wrap:wrap;border-bottom:1px solid var(--line)}.op.on{display:flex}
+.tools{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px 8px}
+.tools button{border:0;padding:12px 0;font-size:13px;font-weight:600;color:var(--mut)}.tools button.on{color:var(--accfg)}
+.dots,.chips{display:flex;gap:6px;align-items:center}
+.dot{width:28px;height:28px;border-radius:50%;padding:0;border:2px solid var(--line)}.dot.on{outline:2px solid var(--acc);outline-offset:2px}
+.chip{padding:6px 11px;font-size:14px}
+input[type=range]{width:120px;accent-color:var(--acc)}
+select,.hin input[type=text]{font:inherit;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:12px;padding:7px 8px}
+.hin input[type=text]{flex:1;min-width:0}
+#strip{display:flex;gap:6px;overflow-x:auto;max-width:100%}#strip button{padding:2px;background:#fff;min-width:56px;height:40px}#strip button.on{outline:2px solid var(--acc)}#strip img{max-height:32px;max-width:80px}
+#hub,#sheet{position:fixed;inset:0;z-index:20;background:var(--bg);overflow:auto;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 40px;display:none}
+.hin{max-width:480px;margin:0 auto}
+.hbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.hbar b{font-size:17px}
+.seg{display:flex;margin:10px 0}.seg button{flex:1;border-radius:0}.seg button:first-child{border-radius:12px 0 0 12px}.seg button:last-child{border-radius:0 12px 12px 0}
+.hint{color:var(--mut);margin:8px 0}.hin h2{margin:12px 0 0;font-size:24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-top:12px}
+.card canvas{width:100%;height:auto;display:block;border-bottom:1px solid var(--line);margin-bottom:8px}
+.meta{display:flex;justify-content:space-between;margin-bottom:8px}.meta span{color:var(--mut)}
+.card .r{justify-content:flex-start}.card .r button{padding:7px 10px;font-size:14px}
+#pad{width:100%;background:#fff;border-radius:14px;border:1px solid var(--line);touch-action:none;display:block;margin:10px 0}
+#pad.glyph{max-width:340px;margin:10px auto;background-image:linear-gradient(transparent 71.5%,#7c9cff 71.5%,#7c9cff 72.3%,transparent 72.3%)}
+#phWrap{overflow:auto;max-height:52vh;border:1px solid var(--line);border-radius:12px;background:#fff;margin:8px 0}
+#ph{display:block;width:100%;touch-action:none}#ph.pan{touch-action:auto}
+#slist{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.st{background:#fff;color:#333;border:1px solid var(--line);border-radius:12px;padding:6px;position:relative;text-align:center}.st img{max-width:100%;max-height:70px}.st small{display:block}.st b{position:absolute;right:6px;top:2px;color:#c0262d;padding:2px 6px;cursor:pointer}
+textarea{font:inherit;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:12px;padding:8px;width:100%;margin:8px 0}
+#cpWrap{overflow:auto;max-height:44vh;border:1px solid var(--line);border-radius:12px;background:#fff;margin:8px 0}#cp{display:block;width:100%}
+#cpPrev{width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:12px;margin-top:8px}
+#sheet img{width:100%;max-width:700px;display:block;margin:0 auto 12px;border-radius:4px}#sheet p{text-align:center;color:var(--mut)}
+#msg{position:fixed;left:50%;top:calc(66px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:99px;z-index:30;display:none;font-size:14px;max-width:90vw;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">Inkwell</span>
+  <button id="undo" class="sm">Undo</button><button id="hubOpen" class="sm">My hand</button><label class="btn sm" for="file">Open</label><button id="exp" class="pri sm">Export</button>
+</header>
+<input id="file" type="file" accept="application/pdf,image/*" hidden>
+<main id="pages">
+  <div class="empty" id="empty">
+    <h1>Write on any document, in your own hand.</h1>
+    <p>Open a PDF or a photo, then fill it in with a pen or with typed text that looks handwritten.</p>
+    <div class="row"><label class="btn pri" for="file">Open document</label><button id="blank">Blank page</button><button id="eHand">My handwriting</button></div>
+  </div>
+</main>
+<div id="msg"></div>
+
+<nav class="tb">
+  <div class="op on" data-for="move"><span class="lbl">One finger scrolls, pinch to zoom</span><button id="zo" class="sm">−</button><button id="zi" class="sm">+</button></div>
+  <div class="op" data-for="pen"><div class="dots"></div><input class="sz" type="range" min="1" max="12" value="3" aria-label="Pen size"></div>
+  <div class="op" data-for="erase"><span class="lbl">Eraser size</span><input class="sz" type="range" min="1" max="12" value="3" aria-label="Eraser size"></div>
+  <div class="op" data-for="text"><select id="font" aria-label="Handwriting style"></select><button id="goCopy" class="sm pri">Copy a photo</button><button id="goStyles" class="sm">Styles</button><div class="chips"></div><div class="dots"></div></div>
+  <div class="op" data-for="stamp"><div id="strip"></div><button id="goStamps" class="sm">+ New</button><div class="chips"></div><div class="dots"></div></div>
+  <div class="tools"><button data-t="move" class="on">Move</button><button data-t="pen">Pen</button><button data-t="text">Text</button><button data-t="erase">Erase</button><button data-t="stamp">Stamp</button></div>
+</nav>
+
+<div id="hub"><div class="hin">
+  <div class="hbar"><button id="hBack" class="sm">‹ Back</button><b id="hTitle">Handwriting</b><button id="hClose" class="sm pri">Done</button></div>
+  <div id="hHome">
+    <div class="seg"><button id="tbSt" class="on">Styles</button><button id="tbSp">Stamps</button></div>
+    <div id="vStyles">
+      <button id="copyBig" class="pri" style="width:100%;padding:14px;margin-top:8px">Copy handwriting from a photo</button>
+      <p class="hint">A style is a handwriting you can type with. Copy one from a photo, or build one by hand below.</p>
+      <div class="r"><input type="text" id="newName" placeholder="Name, e.g. My hand"><button id="newStyle" class="pri">+ New style</button></div>
+      <div id="styleList"></div>
+    </div>
+    <div id="vStamps" style="display:none">
+      <p class="hint">Stamps are saved signatures, names, ticks or dates you can place anywhere.</p>
+      <div class="r"><button id="stW" class="pri">Write a stamp</button><button id="stP">From a photo</button></div>
+      <div id="slist"></div>
+    </div>
+  </div>
+  <div id="hCopy" style="display:none">
+    <p class="hint">Take or choose a photo of the handwriting you want to copy. Claude reads it for you, so there is nothing to type. Then save it and pick it in Text.</p>
+    <div class="r"><label class="btn pri">Take photo<input type="file" accept="image/*" capture="environment" hidden id="cpCam"></label><label class="btn">Choose photo<input type="file" accept="image/*" hidden id="cpPick"></label></div>
+    <div id="cpWork" style="display:none">
+      <div class="r" style="margin-top:8px"><button id="cpZ" class="sm">Zoom</button><span class="lbl">Ink</span><input type="range" id="cthr" min="60" max="95" value="82"><button id="cpRe" class="sm">Read again</button></div>
+      <div id="cpWrap"><canvas id="cp"></canvas></div>
+      <p class="hint" id="cpStat"></p>
+      <input type="text" id="cpTry" value="Hello, 2026" placeholder="Try typing here" style="width:100%">
+      <canvas id="cpPrev" width="560" height="100"></canvas>
+      <div class="r" style="margin-top:10px"><input type="text" id="cpName" placeholder="Name this handwriting"><button id="cpSave" class="pri">Save handwriting</button></div>
+    </div>
+  </div>
+  <div id="hWrite" style="display:none">
+    <div id="pH"><h2 id="prompt"></h2><p class="hint" id="prog"></p></div>
+    <canvas id="pad"></canvas>
+    <div class="r" id="wS"><input type="text" id="sname" placeholder="Name it, e.g. Signature"><button id="sclr">Clear</button><button id="ssave" class="pri">Save</button></div>
+    <div class="r" id="wL"><button id="lclr">Clear</button><button id="lskip">Skip</button><button id="lnext" class="pri">Save &amp; next</button></div>
+  </div>
+  <div id="hPhoto" style="display:none">
+    <p class="hint" id="phHint"></p>
+    <div class="r"><label class="btn pri">Take photo<input type="file" accept="image/*" capture="environment" hidden id="phCam"></label><label class="btn">Choose photo<input type="file" accept="image/*" hidden id="phPick"></label></div>
+    <div id="phWork" style="display:none">
+      <h2 id="phPrompt"></h2>
+      <div class="r" style="margin-top:8px"><button id="phMode" class="sm">Mode: Select</button><button id="phZo" class="sm">−</button><button id="phZi" class="sm">+</button></div>
+      <div id="phWrap"><canvas id="ph"></canvas></div>
+      <div class="r"><span class="lbl">Ink strength</span><input type="range" id="thr" min="40" max="235" value="130"></div>
+      <div class="r" style="margin-top:8px"><input type="text" id="phName" placeholder="Name it, e.g. Signature" style="display:none"><button id="phSkip">Skip</button><button id="phSave" class="pri">Save &amp; next</button></div>
+    </div>
+  </div>
+</div></div>
+
+<div id="sheet"><p>Press and hold a page to save it, then close.</p><div id="imgs"></div><div style="text-align:center"><button id="close" class="pri">Close</button></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const LS={get(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){msg("Could not save on this device",2500)}}};
+let tool="move",color="#1d3a8a",size=3,font="Caveat",zoom=1,tpx=40,cur=null,curP=null,stampSel=null;
+let styles=LS.get("iw.styles",null),stamps=LS.get("iw.stamps",[]);
+if(!styles){const g=LS.get("iw.glyphs",null);styles=g?[{id:"s1",name:"My handwriting",glyphs:g}]:[]}
+let TMP={glyphs:{}};const saveStyles=()=>LS.set("iw.styles",styles),saveStamps=()=>LS.set("iw.stamps",stamps),styleOf=id=>id==="tmp"?TMP:styles.find(s=>s.id===id);
+const pages=[],hist=[],COLORS=["#1d3a8a","#111111","#c0262d","#1b7f4b"],SEQ="abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.,-@:/".split("");
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const baseW=()=>Math.min(innerWidth-24,900);
+function msg(t,ms){const m=$("#msg");m.textContent=t;m.style.display="block";clearTimeout(msg.t);if(ms)msg.t=setTimeout(()=>m.style.display="none",ms)}
+/* ---------- toolbar ---------- */
+$$(".dots").forEach(w=>COLORS.forEach((c,i)=>{const b=document.createElement("button");b.className="dot"+(i?"":" on");b.dataset.c=c;b.style.background=c;b.setAttribute("aria-label","Ink colour");b.onclick=()=>{color=c;$$(".dot").forEach(x=>x.classList.toggle("on",x.dataset.c===c))};w.append(b)}));
+$$(".chips").forEach(w=>[["S",26],["M",40],["L",60],["XL",88]].forEach(([l,v])=>{const b=document.createElement("button");b.className="chip"+(v===40?" on":"");b.textContent=l;b.dataset.v=v;b.onclick=()=>{tpx=v;$$(".chip").forEach(x=>x.classList.toggle("on",+x.dataset.v===v))};w.append(b)}));
+$$(".sz").forEach(s=>s.oninput=e=>{size=+e.target.value;$$(".sz").forEach(x=>x.value=size)});
+function setTool(t){tool=t;$$("[data-t]").forEach(x=>x.classList.toggle("on",x.dataset.t===t));$$(".op").forEach(o=>o.classList.toggle("on",o.dataset.for===t));document.body.classList.toggle("draw",t!=="move"&&t!=="stamp"||(t==="stamp"));if(t==="move")document.body.classList.remove("draw");
+  if(t==="text")msg("Tap on the page where you want to write",1800);if(t==="stamp")msg(stamps.length?"Tap on the page to place the stamp":"Create a stamp first with + New",2000)}
+$$("[data-t]").forEach(b=>b.onclick=()=>setTool(b.dataset.t));
+function fillFonts(){const s=$("#font");s.innerHTML='<option value="Caveat">Neat</option><option value="Reenie Beanie">Quick</option><option value="Homemade Apple">Loopy</option>';
+  styles.forEach(t=>{const o=new Option("✍ "+t.name,"S:"+t.id);s.add(o)});if(![...s.options].some(o=>o.value===font))font="Caveat";s.value=font}
+$("#font").onchange=e=>font=e.target.value;
+["Caveat","Reenie Beanie","Homemade Apple"].forEach(f=>document.fonts.load(`40px "${f}"`));
+function renderStrip(){const S=$("#strip");S.innerHTML="";if(!stamps.length){S.innerHTML='<span class="lbl">No stamps yet</span>';return}
+  if(!stampSel||!stamps.includes(stampSel))stampSel=stamps[0];
+  stamps.forEach(s=>{const b=document.createElement("button");b.className=s===stampSel?"on":"";const i=new Image();i.src=s.d;i.alt=s.name;b.append(i);b.onclick=()=>{stampSel=s;renderStrip()};S.append(b)})}
+function setZoom(z){zoom=Math.max(.6,Math.min(3,z));pages.forEach(p=>p.wrap.style.width=baseW()*zoom+"px")}
+$("#zi").onclick=()=>setZoom(zoom*1.25);$("#zo").onclick=()=>setZoom(zoom/1.25);addEventListener("resize",()=>setZoom(zoom));
+/* ---------- pages & drawing ---------- */
+function addPage(bg){
+  const W=bg.width,H=bg.height,wrap=document.createElement("div");
+  wrap.className="page";wrap.style.width=baseW()*zoom+"px";wrap.style.aspectRatio=W+"/"+H;
+  const ink=document.createElement("canvas");ink.className="ink";ink.width=W;ink.height=H;
+  wrap.append(bg,ink);$("#pages").append(wrap);
+  const p={wrap,bg,ink,ops:[],W,H};pages.push(p);
+  ink.addEventListener("pointerdown",e=>down(p,e));ink.addEventListener("pointermove",e=>move(p,e));
+  ["pointerup","pointercancel"].forEach(n=>ink.addEventListener(n,()=>{cur=null}));
+}
+function pt(p,e){const r=p.ink.getBoundingClientRect();return[(e.clientX-r.left)*p.W/r.width,(e.clientY-r.top)*p.H/r.height,e.pointerType==="pen"&&e.pressure?.4+e.pressure*1.2:1]}
+function seg(ctx,o,a,b){ctx.globalCompositeOperation=o.er?"destination-out":"source-over";ctx.strokeStyle=o.c;ctx.lineWidth=o.w*b[2];ctx.lineCap=ctx.lineJoin="round";ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke()}
+const isMine=f=>f.startsWith("S:");
+function txt(ctx,o){if(isMine(o.f))return mine(ctx,o);ctx.globalCompositeOperation="source-over";ctx.fillStyle=o.c;ctx.font=`${o.px}px "${o.f}"`;ctx.textBaseline="middle";let x=o.x;
+  o.s.split(" ").forEach((w,i)=>{const j=o.j[i]||[0,0];ctx.save();ctx.translate(x,o.y+j[1]);ctx.rotate(j[0]);ctx.fillText(w,0,0);ctx.restore();x+=ctx.measureText(w+" ").width})}
+function mine(ctx,o){ctx.globalCompositeOperation="source-over";const st=styleOf(o.f.slice(2)),G=st?st.glyphs:{},s=o.px*1.1/300,by=o.y+o.px*.3;let x=o.x;
+  [...o.s].forEach((ch,i)=>{const j=o.j[i]||[0,0];if(ch===" "){x+=o.px*.4;return}const A=[].concat(G[ch]||G[ch.toUpperCase()]||G[ch.toLowerCase()]||[]),g=A[Math.floor((j[2]||0)*A.length)];
+    if(!g){ctx.fillStyle=o.c;ctx.font=`${o.px}px "Caveat"`;ctx.textBaseline="alphabetic";ctx.fillText(ch,x,by);x+=ctx.measureText(ch).width;return}
+    const t=tint(g.d,o.c);if(!t){x+=g.w*s;return}
+    ctx.save();ctx.translate(x,by+j[1]);ctx.rotate(j[0]);ctx.drawImage(t,0,g.oy*s,t.width*s/(g.k||1),t.height*s/(g.k||1));ctx.restore();x+=g.w*s+o.px*.06})}
+const imgs=new Map(),tints=new Map();
+function getImg(d){let i=imgs.get(d);if(!i){i=new Image();i.onload=()=>{pages.forEach(render);if($("#hub").style.display==="block"&&$("#hHome").style.display==="block")renderHub();if($("#hCopy").style.display==="block")cpPrev()};i.src=d;imgs.set(d,i)}return i.complete&&i.naturalWidth?i:null}
+function tint(d,c){const k=c+d;let t=tints.get(k);if(t)return t;const i=getImg(d);if(!i)return null;t=document.createElement("canvas");t.width=i.naturalWidth;t.height=i.naturalHeight;const x=t.getContext("2d");x.drawImage(i,0,0);x.globalCompositeOperation="source-in";x.fillStyle=c;x.fillRect(0,0,t.width,t.height);tints.set(k,t);return t}
+function render(p){const c=p.ink.getContext("2d");c.clearRect(0,0,p.W,p.H);
+  p.ops.forEach(o=>{if(o.t==="x")txt(c,o);else if(o.t==="i"){const t=tint(o.d,o.c);if(t){c.globalCompositeOperation="source-over";c.drawImage(t,o.x-o.w*o.k/2,o.y-o.h*o.k/2,o.w*o.k,o.h*o.k)}}else{const q=o.pts;if(q.length===1)seg(c,o,q[0],q[0]);for(let i=1;i<q.length;i++)seg(c,o,q[i-1],q[i])}});c.globalCompositeOperation="source-over"}
+function down(p,e){
+  if(tool==="move")return;
+  if(tool==="text"){e.preventDefault();return startText(p,e)}
+  if(tool==="stamp"){e.preventDefault();if(!stampSel)return msg("Create a stamp first with + New",2000);const q=pt(p,e);p.ops.push({t:"i",x:q[0],y:q[1],d:stampSel.d,w:stampSel.w,h:stampSel.h,k:tpx/60,c:color});hist.push(p);render(p);return}
+  e.preventDefault();p.ink.setPointerCapture(e.pointerId);
+  cur={t:"s",c:color,w:(size*1.5+1)*(tool==="erase"?5:1),er:tool==="erase",pts:[pt(p,e)]};curP=p;p.ops.push(cur);hist.push(p);
+  seg(p.ink.getContext("2d"),cur,cur.pts[0],cur.pts[0]);
+}
+function move(p,e){if(!cur||curP!==p)return;e.preventDefault();const c=p.ink.getContext("2d");
+  (e.getCoalescedEvents?e.getCoalescedEvents():[e]).forEach(ev=>{const n=pt(p,ev),a=cur.pts[cur.pts.length-1];cur.pts.push(n);seg(c,cur,a,n)});c.globalCompositeOperation="source-over"}
+function startText(p,e){
+  $$(".page input").forEach(i=>i.blur());
+  const r=p.ink.getBoundingClientRect(),x=(e.clientX-r.left)*p.W/r.width,y=(e.clientY-r.top)*p.H/r.height,px=tpx,i=document.createElement("input"),f=font,c=color,m=isMine(f);
+  i.style.left=(e.clientX-r.left)+"px";i.style.top=(e.clientY-r.top)+"px";i.style.fontFamily=m?'"Caveat"':`"${f}"`;i.style.fontSize=px*r.width/p.W+"px";i.style.color=c;i.style.height=px*r.width/p.W*1.3+"px";
+  p.wrap.append(i);setTimeout(()=>i.focus(),30);let done=false;
+  const fin=()=>{if(done)return;done=true;const s=i.value.trim();i.remove();if(!s)return;
+    const j=(m?[...s]:s.split(" ")).map(()=>[(Math.random()-.5)*(m?.06:.05),(Math.random()-.5)*px*(m?.06:.12),Math.random()]);
+    p.ops.push({t:"x",x,y,s,c,f,px,j});hist.push(p);render(p)};
+  i.onblur=fin;i.onkeydown=ev=>{if(ev.key==="Enter")i.blur()};
+}
+$("#undo").onclick=()=>{const p=hist.pop();if(p){p.ops.pop();render(p)}};
+function reset(){pages.length=0;hist.length=0;$$(".page").forEach(n=>n.remove());$("#empty").style.display="none"}
+function blankPage(){const c=document.createElement("canvas");c.width=1240;c.height=1754;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);return c}
+$("#blank").onclick=()=>{reset();addPage(blankPage())};
+$("#file").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;e.target.value="";
+  try{msg("Loading…");
+    if(f.type==="application/pdf"||/\.pdf$/i.test(f.name)){
+      const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;reset();
+      for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i),sc=1240/pg.getViewport({scale:1}).width,v=pg.getViewport({scale:sc});
+        const c=document.createElement("canvas");c.width=Math.round(v.width);c.height=Math.round(v.height);
+        await pg.render({canvasContext:c.getContext("2d"),viewport:v}).promise;addPage(c);msg("Loading page "+i+" of "+pdf.numPages+"…")}
+    }else{const img=new Image();img.src=URL.createObjectURL(f);await img.decode();
+      const s=Math.min(1,1600/img.naturalWidth),c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);reset();addPage(c)}
+    msg("Ready. Pick Pen, Text or Stamp. To copy a handwriting: Text, then Copy a photo.",4500);
+  }catch(err){msg("Could not open that file",2500)}
+};
+$("#exp").onclick=async()=>{
+  if(!pages.length)return msg("Open a document first",1800);
+  msg("Preparing…");const {jsPDF}=window.jspdf;let pdf;const out=[];
+  pages.forEach(p=>{const c=document.createElement("canvas");c.width=p.W;c.height=p.H;const x=c.getContext("2d");x.drawImage(p.bg,0,0);x.drawImage(p.ink,0,0);
+    const d=c.toDataURL("image/jpeg",.92);out.push(d);const w=p.W*.75,h=p.H*.75,o=w>h?"l":"p";
+    if(!pdf)pdf=new jsPDF({unit:"pt",format:[w,h],orientation:o});else pdf.addPage([w,h],o);pdf.addImage(d,"JPEG",0,0,w,h)});
+  const file=new File([pdf.output("blob")],"filled-document.pdf",{type:"application/pdf"});$("#msg").style.display="none";
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:"Filled document"});return}catch(e){if(e.name==="AbortError")return}}
+  $("#imgs").innerHTML=out.map(s=>`<img src="${s}" alt="Page">`).join("");$("#sheet").style.display="block";
+};
+$("#close").onclick=()=>$("#sheet").style.display="none";
+/* ---------- handwriting hub ---------- */
+let tgt=null,hubTab="styles",si=0;
+function go(scr,title){["hHome","hWrite","hPhoto","hCopy"].forEach(i=>$("#"+i).style.display=i===scr?"block":"none");$("#hTitle").textContent=title;$("#hBack").style.visibility=scr==="hHome"?"hidden":"visible"}
+function openHub(tab){hubTab=tab||"styles";$("#hub").style.display="block";go("hHome","Handwriting");renderHub()}
+function closeHub(){$("#hub").style.display="none";fillFonts();renderStrip()}
+function home(tab){if(tab)hubTab=tab;go("hHome","Handwriting");renderHub()}
+function arm(b,fn){b.onclick=()=>{if(b.dataset.a){fn()}else{b.dataset.a=1;const t=b.textContent;b.textContent="Tap again";setTimeout(()=>{delete b.dataset.a;b.textContent=t},2500)}}}
+function renderHub(){
+  $("#tbSt").classList.toggle("on",hubTab==="styles");$("#tbSp").classList.toggle("on",hubTab==="stamps");
+  $("#vStyles").style.display=hubTab==="styles"?"block":"none";$("#vStamps").style.display=hubTab==="stamps"?"block":"none";
+  const L=$("#styleList");L.innerHTML="";const ink=getComputedStyle(document.body).color;
+  styles.forEach(t=>{const c=document.createElement("div");c.className="card";
+    c.innerHTML='<canvas width="560" height="100"></canvas><div class="meta"><b></b><span></span></div><div class="r"><button class="pri u">Use</button><button class="w">Write letters</button><button class="p">From photo</button><button class="x">Delete</button></div>';
+    c.querySelector("b").textContent=t.name;c.querySelector("span").textContent=Object.keys(t.glyphs).length+" of "+SEQ.length+" letters";
+    mine(c.querySelector("canvas").getContext("2d"),{s:"Hello, 2026",px:70,x:10,y:48,c:ink,f:"S:"+t.id,j:[]});
+    c.querySelector(".u").onclick=()=>{font="S:"+t.id;closeHub();setTool("text")};
+    c.querySelector(".w").onclick=()=>{tgt={k:"style",id:t.id};startWrite()};
+    c.querySelector(".p").onclick=()=>{tgt={k:"style",id:t.id};startPhoto()};
+    arm(c.querySelector(".x"),()=>{styles=styles.filter(s=>s!==t);saveStyles();renderHub()});L.append(c)});
+  if(!styles.length)L.innerHTML='<p class="hint">No styles yet. Name one above, then add its letters by writing them or by capturing a photo of a handwriting sample.</p>';
+  const S=$("#slist");S.innerHTML="";
+  stamps.forEach(s=>{const d=document.createElement("div");d.className="st";d.innerHTML='<img alt=""><small></small><b>×</b>';d.querySelector("img").src=s.d;d.querySelector("small").textContent=s.name;
+    d.querySelector("b").onclick=()=>{stamps=stamps.filter(x=>x!==s);saveStamps();renderHub()};S.append(d)});
+}
+$("#hubOpen").onclick=()=>openHub("styles");$("#eHand").onclick=()=>openHub("styles");$("#goStyles").onclick=()=>openHub("styles");$("#goStamps").onclick=()=>openHub("stamps");
+$("#hClose").onclick=closeHub;$("#hBack").onclick=()=>home();$("#tbSt").onclick=()=>home("styles");$("#tbSp").onclick=()=>home("stamps");
+$("#newStyle").onclick=()=>{styles.push({id:"s"+Date.now(),name:$("#newName").value.trim()||"Style "+(styles.length+1),glyphs:{}});$("#newName").value="";saveStyles();fillFonts();renderHub();msg("Style created. Add its letters below.",2200)};
+$("#stW").onclick=()=>{tgt={k:"stamp"};startWrite()};$("#stP").onclick=()=>{tgt={k:"stamp"};startPhoto()};
+/* write pad */
+const pad=$("#pad"),pc=pad.getContext("2d");let pd=null;
+function padSize(w,h){pad.width=w;pad.height=h;pad.className=w===h?"glyph":"";pc.lineCap=pc.lineJoin="round";pc.lineWidth=w/90;pc.strokeStyle="#000"}
+const pp=e=>{const r=pad.getBoundingClientRect();return[(e.clientX-r.left)*pad.width/r.width,(e.clientY-r.top)*pad.height/r.height]};
+pad.onpointerdown=e=>{e.preventDefault();pad.setPointerCapture(e.pointerId);pd=pp(e);pc.beginPath();pc.moveTo(pd[0],pd[1]);pc.lineTo(pd[0]+.01,pd[1]);pc.stroke()};
+pad.onpointermove=e=>{if(!pd)return;const n=pp(e);pc.beginPath();pc.moveTo(pd[0],pd[1]);pc.lineTo(n[0],n[1]);pc.stroke();pd=n};
+pad.onpointerup=pad.onpointercancel=()=>{pd=null};
+function bbox(c){const w=c.width,h=c.height,d=c.getContext("2d").getImageData(0,0,w,h).data;let x0=w,y0=h,x1=-1,y1=-1;for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>20){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}return x1<0?null:{x:x0,y:y0,w:x1-x0+1,h:y1-y0+1}}
+function trim(src,b){const c=document.createElement("canvas");c.width=b.w;c.height=b.h;c.getContext("2d").drawImage(src,b.x,b.y,b.w,b.h,0,0,b.w,b.h);return c}
+const clr=()=>pc.clearRect(0,0,pad.width,pad.height);
+function nextMissing(){const g=styleOf(tgt.id).glyphs,k=SEQ.findIndex(c=>!g[c]);si=k<0?0:k}
+function prog(){return "Letter "+(si+1)+" of "+SEQ.length+" · "+Object.keys(styleOf(tgt.id).glyphs).length+" saved"}
+function startWrite(){const L=tgt.k==="style";go("hWrite",L?"Write letters":"Write a stamp");
+  $("#wS").style.display=L?"none":"flex";$("#wL").style.display=L?"flex":"none";$("#pH").style.display=L?"block":"none";
+  if(L){padSize(300,300);nextMissing();showL()}else padSize(800,320)}
+function showL(){$("#prompt").textContent="Write: "+SEQ[si];$("#prog").textContent=prog()+". Sit it on the blue line, the way you normally write."}
+function advW(){clr();si++;if(si>=SEQ.length){msg("All letters saved. Tap Use on the style.",3500);return home()}showL()}
+$("#sclr").onclick=clr;$("#lclr").onclick=clr;$("#lskip").onclick=advW;
+$("#ssave").onclick=()=>{const b=bbox(pad);if(!b)return msg("Write something first",1500);const c=trim(pad,b);stamps.push({name:$("#sname").value.trim()||"Stamp",d:c.toDataURL("image/png"),w:c.width,h:c.height});saveStamps();$("#sname").value="";renderStrip();msg("Stamp saved",1500);home("stamps")};
+$("#lnext").onclick=()=>{const b=bbox(pad);if(!b)return msg("Write the letter first",1500);styleOf(tgt.id).glyphs[SEQ[si]]={d:trim(pad,b).toDataURL("image/png"),w:b.w,oy:b.y-216};saveStyles();advW()};
+/* capture from photo */
+let PW=0,PH=0,gray=null,mask=null,view=null,box=null,sel=false,pan=false,pz=1;const ph=$("#ph"),pcx=ph.getContext("2d");
+const P={".":[16,16],",":[38,16],"-":[12,70],":":[85,85],"@":[135,110],"/":[170,140]};
+function cl(ch){if(P[ch])return P[ch];if("acemnorsuvwxz".includes(ch))return[110,110];if("gjpqy".includes(ch))return[170,110];if(ch==="i")return[140,140];return[170,170]}
+function startPhoto(){const L=tgt.k==="style";go("hPhoto",L?"Capture from photo":"Stamp from photo");$("#phWork").style.display="none";$("#phName").style.display=L?"none":"block";$("#phSkip").style.display=L?"":"none";
+  $("#phHint").textContent=L?"Take or choose a photo of handwriting on plain paper, in dark ink and good light. Then draw a box around each letter, one at a time.":"Take or choose a photo of a signature or a word on plain paper. Then draw a box around it.";if(L)nextMissing()}
+function phPrompt(){$("#phPrompt").textContent=tgt.k==="style"?"Box the letter: "+SEQ[si]:"Box your signature or word";$("#phPrompt").title=tgt.k==="style"?prog():""}
+async function loadPhoto(f){if(!f)return;try{const img=new Image();img.src=URL.createObjectURL(f);await img.decode();
+  const s=Math.min(1,1400/Math.max(img.naturalWidth,img.naturalHeight));PW=Math.round(img.naturalWidth*s);PH=Math.round(img.naturalHeight*s);
+  const c=document.createElement("canvas");c.width=PW;c.height=PH;const x=c.getContext("2d");x.drawImage(img,0,0,PW,PH);const d=x.getImageData(0,0,PW,PH).data;
+  gray=new Uint8Array(PW*PH);for(let i=0;i<gray.length;i++)gray[i]=d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11;
+  const B=40,bw=Math.ceil(PW/B),bg=new Uint8Array(bw*Math.ceil(PH/B));
+  for(let y=0;y<PH;y++)for(let x=0;x<PW;x++){const k=((y/B)|0)*bw+((x/B)|0),g=gray[y*PW+x];if(g>bg[k])bg[k]=g}
+  for(let y=0;y<PH;y++)for(let x=0;x<PW;x++){const i=y*PW+x;gray[i]=Math.min(255,gray[i]*235/(bg[((y/B)|0)*bw+((x/B)|0)]||1))}
+  const h=new Array(256).fill(0);gray.forEach(g=>h[g]++);let sum=0;for(let i=0;i<256;i++)sum+=i*h[i];let sB=0,wB=0,best=0,t=128;
+  for(let i=0;i<256;i++){wB+=h[i];if(!wB)continue;const wF=gray.length-wB;if(!wF)break;sB+=i*h[i];const v=wB*wF*(sB/wB-(sum-sB)/wF)**2;if(v>best){best=v;t=i}}
+  $("#thr").value=Math.round(t*.85);ph.width=PW;ph.height=PH;box=null;pz=1;ph.style.width="100%";$("#phWork").style.display="block";phPrompt();applyThr()}catch(e){msg("Could not read that photo",2500)}}
+$("#phCam").onchange=e=>{loadPhoto(e.target.files[0]);e.target.value=""};$("#phPick").onchange=e=>{loadPhoto(e.target.files[0]);e.target.value=""};
+function applyThr(){const t=+$("#thr").value,m=document.createElement("canvas");m.width=PW;m.height=PH;const x=m.getContext("2d"),im=x.createImageData(PW,PH),d=im.data;
+  for(let i=0;i<gray.length;i++)d[i*4+3]=Math.max(0,Math.min(255,(t-gray[i])*8));x.putImageData(im,0,0);mask=m;
+  view=document.createElement("canvas");view.width=PW;view.height=PH;const v=view.getContext("2d");v.fillStyle="#fff";v.fillRect(0,0,PW,PH);v.drawImage(m,0,0);drawPh()}
+function drawPh(){pcx.drawImage(view,0,0);if(box){pcx.strokeStyle="#2f6bff";pcx.lineWidth=Math.max(2,PW/260);pcx.strokeRect(box.x,box.y,box.w,box.h)}}
+$("#thr").oninput=applyThr;
+const pq=e=>{const r=ph.getBoundingClientRect();return[(e.clientX-r.left)*PW/r.width,(e.clientY-r.top)*PH/r.height]};
+ph.onpointerdown=e=>{if(pan)return;e.preventDefault();ph.setPointerCapture(e.pointerId);const q=pq(e);box={x:q[0],y:q[1],w:0,h:0};sel=true};
+ph.onpointermove=e=>{if(!sel)return;const q=pq(e);box.w=q[0]-box.x;box.h=q[1]-box.y;drawPh()};
+ph.onpointerup=ph.onpointercancel=()=>{sel=false};
+$("#phMode").onclick=()=>{pan=!pan;ph.classList.toggle("pan",pan);$("#phMode").textContent=pan?"Mode: Move photo":"Mode: Select"};
+const phZoom=z=>{pz=Math.max(1,Math.min(4,z));ph.style.width=pz*100+"%"};$("#phZi").onclick=()=>phZoom(pz*1.4);$("#phZo").onclick=()=>phZoom(pz/1.4);
+function fit(t,H){const s=H/t.height,c=document.createElement("canvas");c.width=Math.max(2,Math.round(t.width*s));c.height=H;c.getContext("2d").drawImage(t,0,0,c.width,c.height);return c}
+function grab(){if(!box||Math.abs(box.w)<4||Math.abs(box.h)<4)return null;const b={x:Math.round(Math.min(box.x,box.x+box.w)),y:Math.round(Math.min(box.y,box.y+box.h)),w:Math.round(Math.abs(box.w)),h:Math.round(Math.abs(box.h))};
+  const c=trim(mask,b),bb=bbox(c);return bb?trim(c,bb):null}
+$("#phSave").onclick=()=>{const t=grab();if(!t)return msg("Draw a box around the writing first",2000);
+  if(tgt.k==="stamp"){const c=fit(t,Math.round(t.height*Math.min(1,800/t.width)));stamps.push({name:$("#phName").value.trim()||"Stamp",d:c.toDataURL("image/png"),w:c.width,h:c.height});saveStamps();$("#phName").value="";renderStrip();msg("Stamp saved",1500);return home("stamps")}
+  const ch=SEQ[si],[H,bs]=cl(ch),c=fit(t,H);styleOf(tgt.id).glyphs[ch]={d:c.toDataURL("image/png"),w:c.width,oy:-bs};saveStyles();advP()};
+function advP(){box=null;si++;if(si>=SEQ.length){msg("All letters saved. Tap Use on the style.",3500);return home("styles")}phPrompt();drawPh()}
+$("#phSkip").onclick=advP;
+/* ---------- copy a handwriting from one photo (Claude reads it) ---------- */
+let CP=null,cpZ=1,cpBusy=false;const cp=$("#cp"),cpx=cp.getContext("2d");
+function startCopy(){go("hCopy","Copy handwriting");$("#cpWork").style.display=CP?"block":"none"}
+$("#goCopy").onclick=()=>{openHub("styles");startCopy()};$("#copyBig").onclick=startCopy;
+async function loadCopy(f){if(!f)return;msg("Reading photo…");
+  try{const img=new Image();img.src=URL.createObjectURL(f);await img.decode();
+    const k=Math.min(1,2200/Math.max(img.naturalWidth,img.naturalHeight)),W=Math.round(img.naturalWidth*k),H=Math.round(img.naturalHeight*k),c=document.createElement("canvas");c.width=W;c.height=H;
+    const x=c.getContext("2d");x.drawImage(img,0,0,W,H);const d=x.getImageData(0,0,W,H).data,g=new Uint8Array(W*H);
+    for(let i=0;i<g.length;i++)g[i]=d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11;
+    const sm=document.createElement("canvas"),q=Math.min(1,1100/Math.max(W,H));sm.width=Math.round(W*q);sm.height=Math.round(H*q);sm.getContext("2d").drawImage(c,0,0,sm.width,sm.height);
+    CP={W,H,g,photo:sm,items:[],built:{}};cp.width=W;cp.height=H;cpZ=1;cp.style.width="100%";$("#cpWork").style.display="block";setTimeout(cpAnalyse,30)}catch(e){msg("Could not read that photo",2500)}}
+$("#cpCam").onchange=e=>{loadCopy(e.target.files[0]);e.target.value=""};$("#cpPick").onchange=e=>{loadCopy(e.target.files[0]);e.target.value=""};
+function adaptive(g,W,H,ratio){const r=Math.max(10,Math.round(W/55)),iw=W+1,I=new Float64Array(iw*(H+1)),al=new Uint8Array(W*H);
+  for(let y=0;y<H;y++){let row=0;for(let x=0;x<W;x++){row+=g[y*W+x];I[(y+1)*iw+x+1]=I[y*iw+x+1]+row}}
+  for(let y=0;y<H;y++){const y0=Math.max(0,y-r),y1=Math.min(H,y+r+1);for(let x=0;x<W;x++){const x0=Math.max(0,x-r),x1=Math.min(W,x+r+1),m=(I[y1*iw+x1]-I[y0*iw+x1]-I[y1*iw+x0]+I[y0*iw+x0])/((x1-x0)*(y1-y0)),t=m*ratio,v=g[y*W+x];al[y*W+x]=v<t?Math.min(255,(t-v)*10):0}}
+  return al}
+function cpAnalyse(){if(!CP||cpBusy)return;const {W,H,g}=CP,N=W*H,al=adaptive(g,W,H,+$("#cthr").value/100),db=new Uint8Array(N);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x;if(al[i]>60){db[i]=1;if(x>0)db[i-1]=1;if(x<W-1)db[i+1]=1;if(y>0)db[i-W]=1;if(y<H-1)db[i+W]=1}}
+  const lab=new Int32Array(N),st=new Int32Array(N),comps=[];let L=0;
+  for(let i=0;i<N;i++){if(!db[i]||lab[i])continue;L++;let sp=0,n=0,x0=W,y0=H,x1=0,y1=0;st[sp++]=i;lab[i]=L;
+    while(sp){const p=st[--sp],x=p%W,y=(p/W)|0;n++;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+      for(let dy=-1;dy<=1;dy++){const yy=y+dy;if(yy<0||yy>=H)continue;for(let dx=-1;dx<=1;dx++){const xx=x+dx;if(xx<0||xx>=W)continue;const q=yy*W+xx;if(db[q]&&!lab[q]){lab[q]=L;st[sp++]=q}}}}
+    comps.push({id:L,x0,y0,x1:x1+1,y1:y1+1,n})}
+  CP.al=al;CP.lab=lab;CP.comps=comps.filter(c=>c.n>=12&&c.x1-c.x0<W*.5&&c.y1-c.y0<H*.5);CP.items=[];CP.built={};
+  const v=document.createElement("canvas");v.width=W;v.height=H;const vx=v.getContext("2d"),im=vx.createImageData(W,H);
+  for(let i=0;i<N;i++){const a=255-al[i];im.data[i*4]=im.data[i*4+1]=im.data[i*4+2]=a;im.data[i*4+3]=255}vx.putImageData(im,0,0);CP.view=v;cpx.drawImage(v,0,0);cpDetect()}
+function groupAt(lv){const C=CP.comps;if(!C.length)return{lines:[],groups:[]};
+  const xo=lv===0?9:1-lv*.065,hs=C.map(c=>c.y1-c.y0).sort((a,b)=>a-b),mh=hs[hs.length>>1]||20,par=C.map((_,i)=>i),f=i=>par[i]===i?i:(par[i]=f(par[i]));
+  for(let a=0;a<C.length;a++)for(let b=a+1;b<C.length;b++){const A=C[a],B=C[b],ox=Math.min(A.x1,B.x1)-Math.max(A.x0,B.x0),w=Math.min(A.x1-A.x0,B.x1-B.x0);
+    if(ox<=0||ox<xo*w)continue;if(Math.max(A.y0,B.y0)-Math.min(A.y1,B.y1)<=.7*mh)par[f(a)]=f(b)}
+  const gm=new Map();C.forEach((c,i)=>{const r=f(i);let G=gm.get(r);if(!G){G={x0:c.x0,y0:c.y0,x1:c.x1,y1:c.y1,ids:[],n:0};gm.set(r,G)}
+    G.x0=Math.min(G.x0,c.x0);G.y0=Math.min(G.y0,c.y0);G.x1=Math.max(G.x1,c.x1);G.y1=Math.max(G.y1,c.y1);G.ids.push(c.id);G.n+=c.n});
+  const gs=[...gm.values()],gh=gs.map(q=>q.y1-q.y0).sort((a,b)=>a-b),mH=gh[gh.length>>1]||20,lines=[];
+  gs.sort((a,b)=>a.x0-b.x0).forEach(q=>{const cy=(q.y0+q.y1)/2;let best=null,bd=1e9;lines.forEach(L=>{const l=L[L.length-1],d=Math.abs((l.y0+l.y1)/2-cy);if(d<.8*mH&&d<bd&&l.x1<=q.x1){best=L;bd=d}});if(best)best.push(q);else lines.push([q])});
+  const my=L=>L.reduce((s,q)=>s+q.y0+q.y1,0)/L.length;lines.sort((a,b)=>my(a)-my(b));return{lines,groups:lines.flat()}}
+function grp(q){const {lab,al,W}=CP,w=q.x1-q.x0,h=q.y1-q.y0,c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d"),im=x.createImageData(w,h),set=new Set(q.ids);
+  for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){const i=(q.y0+yy)*W+q.x0+xx;if(set.has(lab[i]))im.data[(yy*w+xx)*4+3]=al[i]}x.putImageData(im,0,0);return c}
+function sheets(items){const out=[],SW=640,SH=900,RH=96;let cv,x,px=0,py=0;const mk=()=>{cv=document.createElement("canvas");cv.width=SW;cv.height=SH;x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,SW,SH);px=0;py=0;out.push(cv)};mk();
+  items.forEach((it,n)=>{const c=it.cv,th=RH-26,tw=Math.min(300,Math.max(70,Math.round(th*c.width/c.height)+14));
+    if(px+tw>SW){px=0;py+=RH}if(py+RH>SH)mk();x.strokeStyle="#bbb";x.strokeRect(px+.5,py+.5,tw-1,RH-1);
+    const sc=Math.min(th/c.height,(tw-14)/c.width),dw=c.width*sc,dh=c.height*sc;x.drawImage(c,px+(tw-dw)/2,py+22+(th-dh)/2,dw,dh);
+    x.fillStyle="#d00";x.font="bold 15px sans-serif";x.fillText(String(n+1),px+4,py+16);px+=tw});
+  return out}
+const blob=(c,t,q)=>new Promise(r=>c.toBlob(r,t,q));
+async function cpDetect(){if(cpBusy)return;cpBusy=true;$("#cpRe").disabled=true;$("#cpStat").textContent="Finding the handwriting…";
+  try{const sample=await claude.use("sample");if(!sample)throw{code:"none"};const lim=await sample.limits();if(!lim.images)throw{code:"images_unavailable"};
+    const {W,H}=CP,all=groupAt(6).groups.map((q,i)=>({q,i})).filter(({q})=>{const w=q.x1-q.x0,h=q.y1-q.y0,a=w/h;return q.n>=60&&w<W*.35&&h<H*.2&&w>=8&&h>=10&&a>.08&&a<9});
+    const items=all.sort((a,b)=>b.q.n-a.q.n).slice(0,120).sort((a,b)=>a.i-b.i).map(o=>({q:o.q,cv:grp(o.q),t:null}));
+    if(!items.length)throw{code:"empty"};
+    CP.items=items;cpDraw();$("#cpStat").textContent="Claude is reading your handwriting… this can take up to a minute.";
+    const sh=sheets(items),imgs=[await blob(CP.photo,"image/jpeg",.8),...await Promise.all(sh.map(c=>blob(c,"image/png")))];
+    const prompt=`You are helping copy someone's handwriting. Image 1 is the whole photo of a form or note. The other images are contact sheets with ${items.length} numbered tiles (red number at the top-left of each tile, numbered 1 to ${items.length} in order across the sheets). Each tile is a cut-out of ink from the photo. For each tile, say what the writer handwrote there. Rules: reply with ONLY a JSON object mapping the tile number (as a string) to a text string. Keep the exact characters, upper or lower case, digits and punctuation. If a tile holds several joined letters, give all of them in order as one string. Use null for noise, ruled lines, underlines, smudges, stamps, pre-printed form text (typed or printed, not handwritten) and for fragments you cannot read. Example: {"1":"A","2":null,"3":"Jackson","4":"7"}`;
+    const res=await sample.json(prompt,{images:imgs,modelTier:"default"});
+    items.forEach((it,n)=>{const v=res&&res[String(n+1)];it.t=typeof v==="string"?v:null});
+    CP.built=cpBuild();cpDraw();cpPrev();const keys=Object.keys(CP.built).sort();
+    $("#cpStat").textContent=keys.length?"✓ Copied "+keys.length+" characters: "+keys.join(" ")+". Try typing below, then save.":"No handwriting found. Try a closer, sharper photo with dark ink, move the Ink slider, then tap Read again."}
+  catch(e){const c=e&&e.code;$("#cpStat").textContent=c==="not_granted"?"Allow Claude to read the photo when asked, then tap Read again.":c==="rate_limited"?"Too many requests right now. Wait a moment, then tap Read again.":c==="empty"?"No handwriting found. Try a closer, sharper photo with dark ink, then tap Read again.":c==="none"||c==="images_unavailable"?"This view can’t send photos to Claude. Open the page from your claude.ai app.":"Something went wrong reading the photo. Tap Read again."}
+  finally{cpBusy=false;$("#cpRe").disabled=false}}
+function cpBuild(){const med=a=>{a=a.slice().sort((x,y)=>x-y);return a[a.length>>1]},P=[];
+  CP.items.forEach(it=>{const ch=[...(it.t||"").replace(/\s+/g,"")];if(!ch.length)return;const c=it.cv,w=c.width,h=c.height;let cuts=[0,w];
+    if(ch.length>1){const col=new Float32Array(w),d=c.getContext("2d").getImageData(0,0,w,h).data,N=ch.length;for(let y=0;y<h;y++)for(let x=0;x<w;x++)col[x]+=d[(y*w+x)*4+3]/255;
+      const sm=i=>col[Math.max(0,i-1)]+col[i]+col[Math.min(w-1,i+1)];cuts=[0];
+      for(let k=1;k<N;k++){const e=w*k/N,r=.4*w/N;let b=Math.round(e),bv=1e9;for(let i=Math.max(cuts[k-1]+2,Math.floor(e-r));i<=Math.min(w-2,Math.ceil(e+r));i++){const v=sm(i)+Math.abs(i-e)*.02;if(v<bv){bv=v;b=i}}cuts.push(Math.max(b,cuts[k-1]+2))}cuts.push(w)}
+    ch.forEach((cc,k)=>{const x0=cuts[k],x1=Math.min(w,cuts[k+1]);if(x1-x0<3)return;const pc=document.createElement("canvas");pc.width=x1-x0;pc.height=h;pc.getContext("2d").drawImage(c,x0,0,x1-x0,h,0,0,x1-x0,h);const b=bbox(pc);if(!b)return;P.push({ch:cc,c:trim(pc,b),top:it.q.y0+b.y,bot:it.q.y0+b.y+b.h})})});
+  if(!P.length)return{};
+  const xh=P.filter(p=>"acemnorsuvwxz".includes(p.ch)).map(p=>p.c.height),cap=P.filter(p=>/[A-Z0-9]/.test(p.ch)).map(p=>p.c.height);
+  const s0=xh.length?110/med(xh):cap.length?170/med(cap):140/med(P.map(p=>p.c.height)),SP="-'\"*^~=+<>`_",DS="gjpqy,;()[]{}/@|";
+  P.forEach(p=>{const h=p.bot-p.top;p.b=SP.includes(p.ch)?null:DS.includes(p.ch)?p.bot-h*.32:p.bot});
+  const out={};
+  P.forEach(p=>{if(out[p.ch]&&out[p.ch].length>=3)return;let b=p.b;if(b==null){const nb=P.filter(o=>o.b!=null&&Math.abs(o.bot-p.bot)<(p.bot-p.top)*2+60).map(o=>o.b);b=nb.length?med(nb):p.bot}
+    const w=p.c.width,h=p.c.height,dst=document.createElement("canvas");dst.width=Math.max(2,Math.round(w*s0*2));dst.height=Math.max(2,Math.round(h*s0*2));dst.getContext("2d").drawImage(p.c,0,0,dst.width,dst.height);
+    (out[p.ch]=out[p.ch]||[]).push({d:dst.toDataURL("image/png"),w:w*s0,oy:-(b-p.top)*s0,k:2})});
+  return out}
+function cpDraw(){if(!CP.view)return;cpx.drawImage(CP.view,0,0);const fs=Math.max(16,CP.W/60);cpx.lineWidth=Math.max(2,CP.W/700);cpx.font="bold "+fs+"px sans-serif";
+  CP.items.forEach(it=>{const q=it.q,ok=!!(it.t||"").trim();cpx.strokeStyle=cpx.fillStyle=ok?"#2f6bff":"#bbb";cpx.strokeRect(q.x0-2,q.y0-2,q.x1-q.x0+4,q.y1-q.y0+4);if(ok)cpx.fillText(it.t,q.x0,q.y0-5)})}
+function cpPrev(){if(!CP)return;TMP.glyphs=CP.built||{};const c=$("#cpPrev"),x=c.getContext("2d"),s=$("#cpTry").value||"Hello";x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);
+  CP.pj=CP.pj||[];while(CP.pj.length<s.length)CP.pj.push([(Math.random()-.5)*.06,(Math.random()-.5)*3,Math.random()]);mine(x,{s,px:58,x:12,y:50,c:"#111",f:"S:tmp",j:CP.pj})}
+$("#cpTry").oninput=cpPrev;$("#cpRe").onclick=cpAnalyse;$("#cpZ").onclick=()=>{cpZ=cpZ>=4?1:cpZ*2;cp.style.width=cpZ*100+"%"};
+$("#cpSave").onclick=()=>{if(!CP||!Object.keys(CP.built||{}).length)return msg("Upload a photo and wait for it to be read first",2500);
+  const id="s"+Date.now();styles.push({id,name:$("#cpName").value.trim()||"Copied handwriting",glyphs:CP.built});saveStyles();$("#cpName").value="";font="S:"+id;closeHub();setTool("text");msg("Saved. Tap your document and type.",3500)};
+fillFonts();renderStrip();setTool("move");if(!LS.get("iw.styles",null)&&styles.length)saveStyles();
+</script>
+</body>
+</html>
